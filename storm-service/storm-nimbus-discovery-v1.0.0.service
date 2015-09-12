@@ -1,0 +1,33 @@
+[Unit]
+Description=Storm nimbus service discovery
+
+Requires=etcd.service
+Requires=docker.service
+Requires=storm-nimbus@%i.service
+
+After=etcd.service
+After=docker.service
+After=storm-nimbus@%i.service
+BindsTo=storm-nimbus@%i.service
+
+[Service]
+EnvironmentFile=/etc/environment
+
+# Start
+## Test whether service is accessible and then register useful information
+ExecStart=/bin/bash -c ' \
+  while true; do \
+    STORM_UP=$(netstat -an | grep 6627 | grep LISTEN); \
+    if [ ! -z "$STORM_UP" ]; then \
+      etcdctl set /services/storm-nimbus/${COREOS_PUBLIC_IPV4} \'{"id":"%i", "address":"${COREOS_PUBLIC_IPV4}"}\' --ttl 30; \
+    else \
+      etcdctl rm /services/storm-nimbus/${COREOS_PUBLIC_IPV4}; \
+    fi; \
+    sleep 20; \
+  done'
+
+# Stop
+ExecStop=/usr/bin/etcdctl rm /services/storm-nimbus/${COREOS_PUBLIC_IPV4}
+
+[X-Fleet]
+MachineOf=storm-nimbus@%i.service
