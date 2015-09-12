@@ -1,12 +1,12 @@
 [Unit]
-Description=Storm nimbus
+Description=Storm ui
 
 Requires=docker.service
-Requires=storm-nimbus-discovery@%i.service
+Requires=storm-ui-discovery@%i.service
 
 After=network.service
 After=docker.service
-Before=storm-nimbus-discovery@%i.service
+Before=storm-ui-discovery@%i.service
 
 [Service]
 Restart=on-failure
@@ -24,14 +24,14 @@ EnvironmentFile=/etc/environment
 
 # Pre-Start and Start
 ## Directives with "=-" are allowed to fail without consequence
-ExecStartPre=-/usr/bin/docker kill storm-nimbus-node-%H
-ExecStartPre=-/usr/bin/docker rm storm-nimbus-node-%H
-ExecStartPre=/usr/bin/docker pull rpaturu/storm-nimbus
+ExecStartPre=-/usr/bin/docker kill storm-ui-node-%H
+ExecStartPre=-/usr/bin/docker rm storm-ui-node-%H
+ExecStartPre=/usr/bin/docker pull rpaturu/storm-ui
 # COREOS_PUBLIC_IPV4 needs to be changed to COREOS_PRIVATE_IPV4 if running in a private cluster
-ExecStart=/usr/bin/docker run --name=storm-nimbus-node-%H --env HOST_IP=${COREOS_PUBLIC_IPV4} -p 6627:6627 rpaturu/storm-nimbus /opt/launch-nimbus.sh ${COREOS_PUBLIC_IPV4}
+ExecStart=/usr/bin/docker run --name=storm-ui-node-%H --env HOST_IP=${COREOS_PUBLIC_IPV4} -p 8080:8080 rpaturu/storm-ui /opt/launch-ui.sh
 
 # STop
-ExecStop=/usr/bin/docker stop storm-nimbus-node-%H
+ExecStop=/usr/bin/docker stop storm-ui-node-%H
 
 [X-Fleet]
-X-Conflicts=storm-nimbus@*.service
+X-Conflicts=storm-ui@*.service

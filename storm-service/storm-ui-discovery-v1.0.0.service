@@ -1,0 +1,33 @@
+[Unit]
+Description=Storm ui service discovery
+
+Requires=etcd.service
+Requires=docker.service
+Requires=storm-ui@%i.service
+
+After=etcd.service
+After=docker.service
+After=storm-ui@%i.service
+BindsTo=storm-ui@%i.service
+
+[Service]
+EnvironmentFile=/etc/environment
+
+# Start
+## Test whether service is accessible and then register useful information
+ExecStart=/bin/bash -c ' \
+  while true; do \
+    STORM_UP=$(netstat -an | grep 8080 | grep LISTEN); \
+    if [ ! -z "$STORM_UP" ]; then \
+      etcdctl set /services/storm-ui/${COREOS_PUBLIC_IPV4} \'{"id":"%i", "address":"${COREOS_PUBLIC_IPV4}"}\' --ttl 30; \
+    else \
+      etcdctl rm /services/storm-ui/${COREOS_PUBLIC_IPV4}; \
+    fi; \
+    sleep 20; \
+  done'
+
+# Stop
+ExecStop=/usr/bin/etcdctl rm /services/storm-ui/${COREOS_PUBLIC_IPV4}
+
+[X-Fleet]
+MachineOf=storm-ui@%i.service
